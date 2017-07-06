@@ -87,7 +87,7 @@ android {
     buildToolsVersion "25.0.1"
 
     defaultConfig {
-        applicationId "com.authexample"
+        applicationId "com.skydreamer"
         minSdkVersion 16
         targetSdkVersion 23
         versionCode 1

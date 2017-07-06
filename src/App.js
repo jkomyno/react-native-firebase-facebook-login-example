@@ -1,13 +1,15 @@
 import React, { Component } from 'react';
 import {
+  ActivityIndicator,
   View,
+  Button,
   StyleSheet,
 } from 'react-native';
 import * as firebase from 'firebase';
 import FBSDK from 'react-native-fbsdk';
 
 import FacebookButton from './FacebookButton';
-import firebaseConfig from './firebaseConfig';
+import { firebaseConfig } from './firebaseConfig';
 
 const {
   LoginManager,
@@ -21,7 +23,7 @@ const GRAPH_REQUEST_PARAMS = {
   httpMethod: 'GET',
   version: 'v2.8',
   // appId: '251686075279620',
-  appId: '24b433ce76791790109fca83faa35abe',
+  appId: '251686075279620',
   parameters: {
     fields: {
       string: FIELDS,
@@ -29,19 +31,30 @@ const GRAPH_REQUEST_PARAMS = {
   },
 };
 
-firebase.initializeApp(firebaseConfig);
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#fff',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-});
-
 export default class App extends Component {
-  state = {  }
+  state = {
+    loaded: false,
+    loggedIn: false,
+  };
+
+  componentWillMount() {
+    firebase.initializeApp(firebaseConfig);
+    firebase.auth().onAuthStateChanged((user) => {
+      console.log('user', user);
+      if (user) {
+        this.setState({
+          loggedIn: true
+        })
+      } else {
+        this.setState({
+          loggedIn: false
+        })
+      }
+      this.setState({
+        loaded: true,
+      });
+    })
+  }
 
   authenticate = (token) => {
     const provider = firebase.auth.FacebookAuthProvider;
@@ -79,11 +92,38 @@ export default class App extends Component {
     */
   }
 
+  logout = () => {
+    firebase.auth().signOut();
+  }
+
   render() {
+    const {
+      loggedIn,
+      loaded,
+    } = this.state;
     return (
       <View style={styles.container}>
-        <FacebookButton onPress={this.login}/>
+        {
+          !loaded ?
+            <ActivityIndicator /> : (
+            !loggedIn ?
+              <FacebookButton onPress={this.login} /> :
+              <Button
+                title="Log out"
+                onPress={this.logout}
+              />
+            )
+        }
       </View>
     );
   }
 }
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: '#fff',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+});

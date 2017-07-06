@@ -1,4 +1,4 @@
-package com.authexample;
+package com.skydreamer;
 
 import android.content.Intent;
 

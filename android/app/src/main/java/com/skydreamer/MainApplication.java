@@ -1,4 +1,4 @@
-package com.authexample;
+package com.skydreamer;
 
 import android.app.Application;
 
@@ -12,7 +12,6 @@ import com.facebook.soloader.SoLoader;
 
 import com.facebook.CallbackManager;
 import com.facebook.FacebookSdk;
-import com.facebook.reactnative.androidsdk.FBSDKPackage;
 import com.facebook.appevents.AppEventsLogger;
 
 import java.util.Arrays;
