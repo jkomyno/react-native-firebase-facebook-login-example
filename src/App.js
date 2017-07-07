@@ -11,6 +11,8 @@ import FBSDK from 'react-native-fbsdk';
 import FacebookButton from './FacebookButton';
 import { firebaseConfig } from './firebaseConfig';
 
+const rootUrl = 'https://api.skydreamer.io';
+
 const {
   LoginManager,
   AccessToken,
@@ -39,9 +41,20 @@ export default class App extends Component {
 
   componentWillMount() {
     firebase.initializeApp(firebaseConfig);
-    firebase.auth().onAuthStateChanged((user) => {
+    firebase.auth().onAuthStateChanged(async (user) => {
       console.log('user', user);
       if (user) {
+        const currToken = await firebase.auth().currentUser.getIdToken(false);
+        const newToken = await this.upSertToken({
+          id_firebase: user.uid,
+          token: currToken,
+        });
+        console.log('currToken', currToken);
+        console.log('newToken', newToken);
+        console.log('currToken === newToken', currToken === newToken);
+
+        await this.startNearestAirportFetch(newToken);
+
         this.setState({
           loggedIn: true
         })
@@ -55,6 +68,64 @@ export default class App extends Component {
       });
     })
   }
+
+  /**
+   * Dynamically get a concatenated list of urlencoded parameters as an URL
+   * @param {Object} params
+   * @return {String}
+   */
+  formatToUrlEncoded = params =>
+    Object.keys(params).map(key =>
+      `${encodeURIComponent(key)}=${encodeURIComponent(params[key])}`,
+    ).join('&');
+
+  startNearestAirportFetch = async (token) => {
+    const params = {
+      latitude: 4.4627124,
+      longitude: 9.1076929,
+      range: 75,
+      limit: 5,
+    };
+    const response = await fetch(`${rootUrl}/airport/get/nearest`, {
+      method: 'POST',
+      headers: {
+        Authorization: token,
+        Accept: 'application/json',
+        'Content-Type': 'application/x-www-form-urlencoded',
+      },
+      body: this.formatToUrlEncoded(params),
+    });
+    const json = await response.json();
+    let data = null;
+    console.log('json@startNearestAirportFetch', json);
+    if (json.success) {
+      data = json.data.sort((a, b) => (a.distance_km > b.distance_km));
+      data = data.map((item) => {
+        const {
+          id,
+          name,
+        } = item;
+        item.label = `${id} - ${name}`;
+        return item;
+      });
+      console.log('data', data);
+    }
+  }
+
+  upSertToken = async (params) => {
+    console.log('params@upSertToken', params);
+    const response = await fetch(`${rootUrl}/auth/upSertToken`, {
+      method: 'POST',
+      headers: {
+        Accept: 'application/json',
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(params),
+    });
+    const json = await response.json();
+    console.log('json', json);
+    return json.data.token;
+  };
 
   authenticate = (token) => {
     const provider = firebase.auth.FacebookAuthProvider;
